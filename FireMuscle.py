@@ -249,10 +249,17 @@ button[data-testid="baseButton-secondary"] p {
         height: auto !important;
     }
 
-    /* Ocultar botón nativo de colapsar */
-    button[data-testid="collapsedControl"],
+    /* Botón reabrir sidebar visible y naranja */
     [data-testid="collapsedControl"] {
-        display: none !important;
+        display: flex !important;
+        background: #ff6b35 !important;
+        border-radius: 0 8px 8px 0 !important;
+        visibility: visible !important;
+    }
+
+    [data-testid="collapsedControl"] svg {
+        fill: white !important;
+        color: white !important;
     }
 
     /* Contenido principal debajo de la sidebar */
