@@ -617,8 +617,8 @@ with st.sidebar:
         st.rerun()
 
 # ─── NAVIGATION ────────────────────────────────────────────────────────────────
-tab_nutricion, tab_ejercicio, tab_resumen, tab_rutina, tab_database, tab_chat = st.tabs([
-    "🥗 Nutrición", "🏋️ Rutina", "📊 Resumen", "🏗️ Mi Rutina", "🗄️ Database", "🤖 AI Coach"
+tab_nutricion, tab_ejercicio, tab_resumen, tab_database, tab_chat = st.tabs([
+    "🥗 Nutrición", "🏋️ Rutina", "📊 Resumen", "🗄️ Database", "🤖 AI Coach"
 ])
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -778,10 +778,15 @@ with tab_nutricion:
 # TAB 2 · EJERCICIOS
 # ═══════════════════════════════════════════════════════════════════════════════
 with tab_ejercicio:
-    st.markdown("""<div class="card card-orange"><div class="card-title">🏋️ RUTINA SEMANAL · AUTOCARGADA</div><div style="font-size:.8rem;color:#6b7a99;">Rutina prellenada · Lunes a Sábado · Domingo = Descanso 💤</div></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="card card-orange"><div class="card-title">🏋️ MI RUTINA SEMANAL</div>
+    <div style="font-size:.8rem;color:#6b7a99;">Tu rutina personalizada · Lunes a Sábado · Domingo = Descanso 💤</div>
+    </div>""", unsafe_allow_html=True)
+
+    rutina_usuario = get_rutina_usuario(current_user)
+    dias_rutina    = ["Día 1","Día 2","Día 3","Día 4","Día 5","Día 6"]
 
     day_cols = st.columns(6)
-    for i, dia_key in enumerate(RUTINA_BASE.keys()):
+    for i, dia_key in enumerate(dias_rutina):
         with day_cols[i]:
             dow_today = date.today().weekday()
             is_today  = (DIA_SEMANA_MAP.get(dow_today) == dia_key)
@@ -789,41 +794,80 @@ with tab_ejercicio:
             if st.button(label, key=f"daybtn_{i}", use_container_width=True):
                 st.session_state.selected_day = dia_key
 
-    selected   = st.session_state.selected_day
-    rutina_dia = RUTINA_BASE.get(selected, RUTINA_BASE["Día 1"])
+    selected      = st.session_state.selected_day
+    dia_data_usr  = rutina_usuario.get(selected, {"titulo": "", "ejercicios": []})
+    titulo_usr    = dia_data_usr.get("titulo", "")
+    ejercicios_usr = list(dia_data_usr.get("ejercicios", []))
 
-    st.markdown(f"""<div style="display:flex;align-items:center;gap:1rem;margin:1rem 0 .5rem;"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:#ff6b35;">{selected.upper()}: {rutina_dia['titulo'].upper()}</div><span class="routine-badge">✨ Rutina cargada</span></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div style="display:flex;align-items:center;gap:1rem;margin:1rem 0 .5rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:#ff6b35;">
+            {selected.upper()}{(": " + titulo_usr.upper()) if titulo_usr else ""}
+        </div>
+    </div>""", unsafe_allow_html=True)
 
-    with st.expander("📋 Ver rutina del día", expanded=True):
-        st.markdown(f"""<div class="alert-info">💡 Rutina oficial para <strong>{selected}: {rutina_dia['titulo']}</strong>.</div>""", unsafe_allow_html=True)
+    with st.expander("📋 Ver / Editar rutina del día", expanded=True):
+        if ejercicios_usr:
+            for idx, ej in enumerate(ejercicios_usr):
+                mc = {"Abdomen":"#ffd166","Espalda":"#00e5a0","Pecho":"#ff6b35",
+                      "Pierna":"#4facfe","Bíceps":"#a78bfa","Triceps":"#ec4899",
+                      "Cardio":"#ff4757","Core":"#ffd166","Espalda/Brazos":"#00e5a0",
+                      "Hombros":"#4facfe","Glúteos":"#ec4899"}.get(ej.get("musculo",""),"#6b7a99")
+                series_str = str(ej.get("series","-")) if ej.get("series",0) > 0 else "-"
+                desc = ej.get("descanso", ej.get("descanso_txt", "-"))
 
-        for ej in rutina_dia["ejercicios"]:
-            mc = {"Abdomen":"#ffd166","Espalda":"#00e5a0","Pecho":"#ff6b35",
-                  "Pierna":"#4facfe","Bíceps":"#a78bfa","Triceps":"#ec4899",
-                  "Cardio":"#ff4757","Core":"#ffd166","Espalda/Brazos":"#00e5a0"}.get(ej["musculo"],"#6b7a99")
-            series_str = str(ej["series"]) if ej["series"]>0 else "-"
-            st.markdown(f"""<div class="db-ex-row" style="padding:.5rem .3rem;"><span style="color:{mc};font-weight:600;min-width:90px;font-size:.78rem;">{ej['musculo']}</span><span style="flex:1;color:#e8f0fe;font-size:.85rem;">{ej['nombre']}</span><span style="color:#6b7a99;font-family:'JetBrains Mono',monospace;font-size:.72rem;">{series_str} series · {ej['reps']} · {ej['descanso']}</span></div>""", unsafe_allow_html=True)
+                col_ex, col_actions = st.columns([10, 1])
+                with col_ex:
+                    st.markdown(f"""<div class="db-ex-row" style="padding:.5rem .3rem;">
+                        <span style="color:{mc};font-weight:600;min-width:90px;font-size:.78rem;">{ej.get('musculo','—')}</span>
+                        <span style="flex:1;color:#e8f0fe;font-size:.85rem;">{ej.get('nombre','—')}</span>
+                        <span style="color:#6b7a99;font-family:'JetBrains Mono',monospace;font-size:.72rem;">
+                            {series_str} series · {ej.get('reps','-')} · {desc}
+                        </span>
+                    </div>""", unsafe_allow_html=True)
+                with col_actions:
+                    subcols = st.columns(3)
+                    with subcols[0]:
+                        if st.button("▲", key=f"up_{selected}_{idx}", disabled=(idx==0), help="Subir"):
+                            ejercicios_usr[idx], ejercicios_usr[idx-1] = ejercicios_usr[idx-1], ejercicios_usr[idx]
+                            sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
+                            st.rerun()
+                    with subcols[1]:
+                        if st.button("▼", key=f"dn_{selected}_{idx}", disabled=(idx==len(ejercicios_usr)-1), help="Bajar"):
+                            ejercicios_usr[idx], ejercicios_usr[idx+1] = ejercicios_usr[idx+1], ejercicios_usr[idx]
+                            sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
+                            st.rerun()
+                    with subcols[2]:
+                        if st.button("✕", key=f"rdel_{selected}_{idx}", help="Eliminar"):
+                            ejercicios_usr.pop(idx)
+                            sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
+                            st.rerun()
+        else:
+            st.markdown("""<div style="text-align:center;padding:2rem;color:#6b7a99;">
+                <div style="font-size:2rem;margin-bottom:.5rem;">🏗️</div>
+                <div style="color:#a78bfa;font-weight:600;">Este día está vacío</div>
+                <div style="font-size:.8rem;margin-top:.3rem;">Agrega ejercicios abajo</div>
+            </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         col_save, col_clear = st.columns(2)
         with col_save:
             if st.button(f"✅ Guardar rutina de hoy ({selected})", use_container_width=True, key="save_routine"):
                 sb_clear_ejercicios(current_user, selected)
-                for ej in rutina_dia["ejercicios"]:
+                for ej in ejercicios_usr:
                     sb_add_ejercicio(current_user, selected, {
-                        "nombre":       ej["nombre"],
-                        "musculo":      ej["musculo"],
+                        "nombre":       ej.get("nombre",""),
+                        "musculo":      ej.get("musculo",""),
                         "tipo":         "Fuerza",
                         "duracion":     0,
-                        "series":       ej["series"],
-                        "reps":         ej["reps"],
+                        "series":       ej.get("series", 0),
+                        "reps":         ej.get("reps",""),
                         "peso":         0.0,
-                        "descanso_txt": ej["descanso"],
+                        "descanso_txt": ej.get("descanso", ej.get("descanso_txt","")),
                         "notas":        "",
                         "hora":         datetime.now().strftime("%H:%M"),
-                        "fuente":       "excel",
+                        "fuente":       "rutina",
                     })
-                st.success(f"✅ Rutina de {selected} guardada ({len(rutina_dia['ejercicios'])} ejercicios)")
+                st.success(f"✅ Rutina de {selected} guardada ({len(ejercicios_usr)} ejercicios)")
                 st.rerun()
         with col_clear:
             if st.button("🗑️ Borrar ejercicios del día", use_container_width=True, key="clear_exercises"):
@@ -832,38 +876,75 @@ with tab_ejercicio:
 
     st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
 
-    with st.expander("➕ Agregar ejercicio personalizado"):
+    with st.expander("➕ Agregar ejercicio a mi rutina"):
         ec1, ec2 = st.columns([2,1])
         with ec1:
-            ex_name  = st.text_input("🏋️ Nombre del ejercicio", placeholder="Ej: Press de banca...")
-            ex_group = st.selectbox("💪 Grupo muscular",
-                ["Pecho","Espalda","Hombros","Bíceps","Tríceps","Piernas","Glúteos","Core/Abdomen","Cardio","Cuerpo completo"])
+            ex_name  = st.text_input("🏋️ Nombre del ejercicio", placeholder="Ej: Press de banca...", key="ex_nombre")
+            ex_group = st.selectbox("💪 Grupo muscular", [
+                "Abdomen","Pecho","Espalda","Hombros","Bíceps","Triceps",
+                "Pierna","Glúteos","Core","Cardio","Espalda/Brazos"
+            ], key="ex_grupo")
         with ec2:
-            ex_type = st.selectbox("📌 Tipo", ["Fuerza","Cardio","Flexibilidad","HIIT","Funcional"])
-            ex_dur  = st.number_input("⏱️ Duración (min)", min_value=0, max_value=300, value=0, step=5)
-        ex1,ex2,ex3,ex4 = st.columns(4)
-        with ex1: ex_sets    = st.number_input("📋 Series", min_value=0, max_value=20, value=0)
-        with ex2: ex_reps_tx = st.text_input("🔁 Reps", placeholder="10, 10, 8")
-        with ex3: ex_kg      = st.number_input("⚖️ Peso (kg)", min_value=0.0, max_value=500.0, value=0.0, step=0.5)
-        with ex4: ex_rest    = st.text_input("😴 Descanso", placeholder="30 seg / 1 min")
-        ex_notes = st.text_area("📝 Notas (opcional)", placeholder="RPE, sensaciones...", height=60)
+            ex_series  = st.number_input("📋 Series", min_value=0, max_value=20, value=3, key="ex_series")
+            ex_reps_tx = st.text_input("🔁 Reps", placeholder="10, 10, 8", key="ex_reps")
+            ex_rest    = st.text_input("😴 Descanso", placeholder="30 seg / 1 min", key="ex_descanso")
 
-        if st.button("✅ Agregar Ejercicio", use_container_width=True, key="add_custom_ex"):
+        if st.button("✅ Agregar a mi rutina", use_container_width=True, key="add_to_rutina"):
             if ex_name.strip():
+                ejercicios_usr.append({
+                    "musculo":  ex_group,
+                    "nombre":   ex_name,
+                    "series":   ex_series,
+                    "reps":     ex_reps_tx,
+                    "descanso": ex_rest,
+                })
+                sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
+                st.success(f"✅ '{ex_name}' agregado al {selected}")
+                st.rerun()
+            else:
+                st.error("Ingresa el nombre del ejercicio")
+
+    with st.expander("✏️ Editar título del día"):
+        nuevo_titulo = st.text_input("Título", value=titulo_usr, key="titulo_dia",
+                                     placeholder="Ej: Espalda, Pierna, Bíceps...")
+        if st.button("💾 Guardar título", use_container_width=True, key="save_titulo"):
+            sb_save_rutina_dia(current_user, selected, nuevo_titulo, ejercicios_usr)
+            st.success("✅ Título actualizado")
+            st.rerun()
+
+    st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
+
+    with st.expander("➕ Agregar ejercicio al registro de hoy (extra)"):
+        ec1b, ec2b = st.columns([2,1])
+        with ec1b:
+            ex_name2  = st.text_input("🏋️ Nombre", placeholder="Ej: Press de banca...", key="ex2_nombre")
+            ex_group2 = st.selectbox("💪 Grupo muscular", [
+                "Pecho","Espalda","Hombros","Bíceps","Tríceps","Piernas",
+                "Glúteos","Core/Abdomen","Cardio","Cuerpo completo"
+            ], key="ex2_grupo")
+        with ec2b:
+            ex_type2 = st.selectbox("📌 Tipo", ["Fuerza","Cardio","Flexibilidad","HIIT","Funcional"], key="ex2_tipo")
+            ex_sets2 = st.number_input("📋 Series", min_value=0, max_value=20, value=0, key="ex2_series")
+            ex_reps2 = st.text_input("🔁 Reps", placeholder="10, 10, 8", key="ex2_reps")
+            ex_rest2 = st.text_input("😴 Descanso", placeholder="30 seg", key="ex2_desc")
+        ex_notes2 = st.text_area("📝 Notas", placeholder="RPE, sensaciones...", height=60, key="ex2_notas")
+
+        if st.button("✅ Agregar al registro", use_container_width=True, key="add_custom_ex"):
+            if ex_name2.strip():
                 sb_add_ejercicio(current_user, selected, {
-                    "nombre":       ex_name,
-                    "musculo":      ex_group,
-                    "tipo":         ex_type,
-                    "duracion":     ex_dur,
-                    "series":       ex_sets,
-                    "reps":         ex_reps_tx,
-                    "peso":         ex_kg,
-                    "descanso_txt": ex_rest,
-                    "notas":        ex_notes,
+                    "nombre":       ex_name2,
+                    "musculo":      ex_group2,
+                    "tipo":         ex_type2,
+                    "duracion":     0,
+                    "series":       ex_sets2,
+                    "reps":         ex_reps2,
+                    "peso":         0.0,
+                    "descanso_txt": ex_rest2,
+                    "notas":        ex_notes2,
                     "hora":         datetime.now().strftime("%H:%M"),
                     "fuente":       "manual",
                 })
-                st.success(f"✅ '{ex_name}' agregado")
+                st.success(f"✅ '{ex_name2}' agregado al registro")
                 st.rerun()
             else:
                 st.error("Ingresa el nombre del ejercicio")
@@ -871,8 +952,8 @@ with tab_ejercicio:
     exercises = sb_get_ejercicios(current_user, selected)
 
     if exercises:
-        total_sets  = sum(int(e.get("series",0) or 0) for e in exercises)
-        grupos_uq   = len(set(get_musculo_from_exercise(e) for e in exercises))
+        total_sets = sum(int(e.get("series",0) or 0) for e in exercises)
+        grupos_uq  = len(set(get_musculo_from_exercise(e) for e in exercises))
         sc1,sc2,sc3 = st.columns(3)
         for col, val, label in zip([sc1,sc2,sc3],
                                    [len(exercises), total_sets, grupos_uq],
@@ -880,14 +961,14 @@ with tab_ejercicio:
             with col:
                 st.markdown(f"""<div class="metric-box"><div class="metric-val" style="color:#ff6b35;">{val}</div><div class="metric-label">{label}</div></div>""", unsafe_allow_html=True)
 
-        st.markdown(f"""<br><div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:2px;color:#ff6b35;margin-bottom:.8rem;">✅ EJERCICIOS REGISTRADOS ({len(exercises)})</div>""", unsafe_allow_html=True)
+        st.markdown(f"""<br><div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:2px;color:#ff6b35;margin-bottom:.8rem;">✅ EJERCICIOS REGISTRADOS HOY ({len(exercises)})</div>""", unsafe_allow_html=True)
         icon_map = {"Fuerza":"🏋️","Cardio":"🏃","Flexibilidad":"🧘","HIIT":"⚡","Funcional":"🤸"}
 
         for i, ex in enumerate(exercises):
             icon    = icon_map.get(ex.get("tipo","Fuerza"), "💪")
             musculo = get_musculo_from_exercise(ex)
-            fuente_badge = '<span class="routine-badge" style="font-size:.6rem;">📊 Excel</span>' if ex.get("fuente")=="excel" else '<span class="pill pill-purple" style="font-size:.6rem;">✏️ Manual</span>'
-            parts   = []
+            fuente_badge = '<span class="routine-badge" style="font-size:.6rem;">📋 Rutina</span>' if ex.get("fuente")=="rutina" else '<span class="pill pill-purple" style="font-size:.6rem;">✏️ Manual</span>'
+            parts = []
             if ex.get("series"): parts.append(f"{ex['series']} series")
             if ex.get("reps"):   parts.append(str(ex["reps"]))
             if ex.get("peso"):   parts.append(f"{ex['peso']}kg")
@@ -903,7 +984,6 @@ with tab_ejercicio:
                     sb_delete_ejercicio(ex["id"])
                     st.rerun()
 
-        # ─── GUARDAR EN DATABASE ────────────────────────────────────────────
         st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
         st.markdown("""<div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:#a78bfa;margin-bottom:.5rem;">🗄️ GUARDAR EN BASE DE DATOS</div>""", unsafe_allow_html=True)
         st.markdown("""<div class="alert-info">💡 Guarda el día completo (ejercicios + nutrición) en el historial.</div>""", unsafe_allow_html=True)
@@ -913,131 +993,26 @@ with tab_ejercicio:
             suggested_week   = sb_get_next_semana_num(current_user)
             semana_num_input = st.number_input("Número de semana", min_value=1, max_value=52, value=suggested_week, step=1)
             dia_options      = ["DÍA 1","DÍA 2","DÍA 3","DÍA 4","DÍA 5","DÍA 6","DÍA 7"]
-            suggested_dia_idx = ["Día 1","Día 2","Día 3","Día 4","Día 5","Día 6"].index(selected) if selected in ["Día 1","Día 2","Día 3","Día 4","Día 5","Día 6"] else 0
+            suggested_dia_idx = dias_rutina.index(selected) if selected in dias_rutina else 0
             dia_label_input  = st.selectbox("Día de la semana", dia_options, index=suggested_dia_idx)
             notas_db = st.text_input("Notas del día (opcional)", placeholder="Ej: Buen entrenamiento...")
-
         with coldb2:
             st.markdown("<br><br>", unsafe_allow_html=True)
-            today_foods_count = len(sb_get_alimentos(current_user, today_key))
+            today_foods_count = len(sb_get_alimentos(current_user, get_today_key()))
             st.markdown(f"""<div style="background:#1a2332;border:1px solid #1e2d45;border-radius:10px;padding:.8rem;font-size:.8rem;color:#6b7a99;"><div>💪 <strong style="color:#ff6b35;">{len(exercises)}</strong> ejercicios</div><div>🥗 <strong style="color:#00e5a0;">{today_foods_count}</strong> alimentos</div><div style="margin-top:.3rem;font-size:.7rem;">Se guardarán ambos</div></div>""", unsafe_allow_html=True)
 
         if st.button("💾 Guardar en Database", use_container_width=True, key="save_to_db"):
-            today_foods_db = sb_get_alimentos(current_user, today_key)
-            # Limpiar UUIDs para guardar como JSONB
+            today_foods_db = sb_get_alimentos(current_user, get_today_key())
             ex_clean   = [{k: v for k, v in e.items() if k not in ("id","username","created_at")} for e in exercises]
             food_clean = [{k: v for k, v in f.items() if k not in ("id","username","created_at")} for f in today_foods_db]
             sb_save_database(current_user, semana_num_input, dia_label_input, ex_clean, food_clean, notas_db)
             st.success(f"✅ Guardado en Semana {semana_num_input} · {dia_label_input}")
 
     else:
-        st.markdown(f"""<div style="text-align:center;padding:2rem;color:#6b7a99;"><div style="font-size:3rem;margin-bottom:1rem;">🏋️</div><div>Sin ejercicios guardados para {selected}</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div style="text-align:center;padding:2rem;color:#6b7a99;"><div style="font-size:3rem;margin-bottom:1rem;">🏋️</div><div>Sin ejercicios registrados para {selected}</div></div>""", unsafe_allow_html=True)
 
     st.markdown("""<div style="background:rgba(79,172,254,.08);border:1px solid rgba(79,172,254,.2);border-radius:12px;padding:1rem 1.2rem;margin-top:1rem;text-align:center;color:#4facfe;font-size:.85rem;">☀️ <strong>Domingo</strong> — Día de descanso y recuperación. 💤</div>""", unsafe_allow_html=True)
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# TAB 3 · RESUMEN
-# ═══════════════════════════════════════════════════════════════════════════════
-with tab_resumen:
-    st.markdown("""<div class="card card-blue"><div class="card-title">📊 RESUMEN DEL DÍA</div><div style="font-size:.8rem;color:#6b7a99;">Vista general de nutrición + entrenamiento de hoy</div></div>""", unsafe_allow_html=True)
-
-    today_key      = get_today_key()
-    dow            = date.today().weekday()
-    today_dia_key  = DIA_SEMANA_MAP.get(dow)
-    foods_today    = sb_get_alimentos(current_user, today_key)
-    exercises_today = sb_get_ejercicios(current_user, today_dia_key) if today_dia_key else []
-
-    r1, r2 = st.columns(2)
-    with r1:
-        st.markdown("""<div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:#00e5a0;margin-bottom:.8rem;">🥗 NUTRICIÓN HOY</div>""", unsafe_allow_html=True)
-        if foods_today:
-            totals  = sum_nutrients(foods_today)
-            pct_cal = min(totals["calorias"]/limits["calorias"]*100, 100) if limits["calorias"]>0 else 0
-            cal_col = "#00e5a0" if pct_cal<=80 else "#ffd166" if pct_cal<=100 else "#ff4757"
-            st.markdown(f"""<div class="metric-box" style="margin-bottom:.8rem;"><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:{cal_col};">{totals['calorias']:.0f}</div><div class="metric-label">kcal consumidas de {limits['calorias']}</div></div>""", unsafe_allow_html=True)
-            for key, label, unit in [
-                ("proteinas","💪 Proteínas","g"),("carbohidratos","🌾 Carbos","g"),
-                ("grasas","🧈 Grasas","g"),("azucar","🍬 Azúcar","g"),
-                ("fibra","🌿 Fibra","g"),("sodio","🧂 Sodio","mg"),
-            ]:
-                val = totals[key]; lim = limits[key]
-                pct = min(val/lim*100, 100) if lim>0 else 0
-                st_txt,cls,_ = get_status(val,lim,key)
-                bc = "prog-good" if cls=="good" else "prog-warn" if cls=="warn" else "prog-bad"
-                st.markdown(f"""<div class="prog-wrap"><div class="prog-label"><span>{label} <span class="pill pill-{cls}">{st_txt}</span></span><span>{val:.0f}/{lim}{unit}</span></div><div class="prog-bar"><div class="prog-fill {bc}" style="width:{pct:.0f}%"></div></div></div>""", unsafe_allow_html=True)
-            result = overall_diet_status(foods_today, limits)
-            if result:
-                cls,msg = result
-                st.markdown(f'<div class="alert-{cls}" style="margin-top:.8rem;">{msg}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div style="color:#6b7a99;padding:2rem;text-align:center;">Sin datos de nutrición hoy</div>', unsafe_allow_html=True)
-
-    with r2:
-        today_dia_label = RUTINA_BASE.get(today_dia_key,{}).get("titulo","Domingo") if today_dia_key else "Domingo"
-        st.markdown(f"""<div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:#ff6b35;margin-bottom:.8rem;">🏋️ ENTRENAMIENTO HOY {"("+today_dia_label+")" if today_dia_key else "(DOMINGO)"}</div>""", unsafe_allow_html=True)
-        if not today_dia_key:
-            st.markdown("""<div style="text-align:center;padding:2rem;color:#4facfe;"><div style="font-size:3rem;">😴</div><div>Hoy es Domingo · Día de descanso</div></div>""", unsafe_allow_html=True)
-        elif exercises_today:
-            total_sets = sum(int(e.get("series",0) or 0) for e in exercises_today)
-            grupos     = list(set(get_musculo_from_exercise(e) for e in exercises_today))
-            st.markdown(f"""<div class="metric-box" style="margin-bottom:.8rem;"><div class="metric-val" style="color:#ff6b35;">{len(exercises_today)}</div><div class="metric-label">ejercicios · {total_sets} series</div></div>""", unsafe_allow_html=True)
-            st.markdown(f"""<div style="font-size:.75rem;color:#6b7a99;margin-bottom:.5rem;">Grupos: {', '.join(grupos)}</div>""", unsafe_allow_html=True)
-            for ex in exercises_today:
-                parts = []
-                if ex.get("series"): parts.append(f"{ex['series']} series")
-                if ex.get("reps"):   parts.append(str(ex["reps"]))
-                st.markdown(f"""<div style="background:#1a2332;border:1px solid #1e2d45;border-radius:8px;padding:.6rem .8rem;margin:.3rem 0;font-size:.82rem;"><strong>{ex['nombre']}</strong><span style="color:#6b7a99;margin-left:.5rem;">{' | '.join(parts)}</span></div>""", unsafe_allow_html=True)
-        else:
-            rutina_hoy = RUTINA_BASE.get(today_dia_key)
-            if rutina_hoy:
-                st.markdown(f"""<div class="alert-warn">⚡ Sin ejercicios registrados. Tu rutina: <strong>{rutina_hoy['titulo']}</strong> ({len(rutina_hoy['ejercicios'])} ejercicios).</div>""", unsafe_allow_html=True)
-
-    st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
-    st.markdown("""<div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:#4facfe;margin-bottom:.8rem;">📅 RESUMEN SEMANAL</div>""", unsafe_allow_html=True)
-    week_cols = st.columns(7)
-    dia_names = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
-    for i in range(7):
-        dia_key = DIA_SEMANA_MAP.get(i)
-        exs     = sb_get_ejercicios(current_user, dia_key) if dia_key else []
-        is_tod  = (date.today().weekday()==i)
-        color   = "#ff6b35" if is_tod else "#4facfe" if exs else "#6b7a99"
-        icon    = "📍" if is_tod else "✅" if exs else ("😴" if i==6 else "○")
-        with week_cols[i]:
-            st.markdown(f"""<div style="text-align:center;background:#111827;border:1px solid {'#ff6b35' if is_tod else '#1e2d45'};border-radius:10px;padding:.8rem .3rem;"><div style="font-size:1.2rem;">{icon}</div><div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:{color};font-size:.9rem;">{dia_names[i]}</div><div style="font-size:.65rem;color:#6b7a99;margin-top:.2rem;">{len(exs)} ej.</div></div>""", unsafe_allow_html=True)
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# TAB · MI RUTINA
-# ═══════════════════════════════════════════════════════════════════════════════
-with tab_rutina:
-    st.markdown("""<div class="card card-orange"><div class="card-title">🏗️ MI RUTINA PERSONALIZADA</div>
-    <div style="font-size:.8rem;color:#6b7a99;">Edita, agrega, elimina y reordena tus ejercicios por día</div>
-    </div>""", unsafe_allow_html=True)
-
-    rutina_usuario = get_rutina_usuario(current_user)
-
-    dias_rutina = ["Día 1","Día 2","Día 3","Día 4","Día 5","Día 6"]
-
-    if "rutina_dia_sel" not in st.session_state:
-        st.session_state.rutina_dia_sel = "Día 1"
-
-    day_cols_r = st.columns(6)
-    for i, dk in enumerate(dias_rutina):
-        with day_cols_r[i]:
-            if st.button(f"{dk}", key=f"rutbtn_{i}", use_container_width=True):
-                st.session_state.rutina_dia_sel = dk
-
-    dia_sel_r    = st.session_state.rutina_dia_sel
-    dia_data_r   = rutina_usuario.get(dia_sel_r, {"titulo": "", "ejercicios": []})
-    ejercicios_r = list(dia_data_r.get("ejercicios", []))
-    titulo_r     = dia_data_r.get("titulo", "")
-
-    st.markdown(f"""<div style="display:flex;align-items:center;justify-content:space-between;margin:1rem 0 .5rem;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:#ff6b35;">
-            {dia_sel_r}{(": " + titulo_r.upper()) if titulo_r else ""}
-        </div>
-        <div style="font-size:.8rem;color:#6b7a99;">{len(ejercicios_r)} ejercicios</div>
-    </div>""", unsafe_allow_html=True)
-
+    
     # ── LISTA DE EJERCICIOS ─────────────────────────────────────────────────────
     if ejercicios_r:
         for idx, ex in enumerate(ejercicios_r):
