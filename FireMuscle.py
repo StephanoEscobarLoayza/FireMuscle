@@ -358,7 +358,7 @@ def sb_get_next_semana_num(username):
     return max(nums) + 1
 
 # ─── NUTRIENT HELPERS ─────────────────────────────────────────────────────────
-def calc_limits(age, weight_kg, height_cm, sex="Masculino", activity="Moderado", use_excel=False):
+def calc_limits(age, weight_kg, height_cm, sex="Masculino", activity="Moderado", objetivo="Mantener peso", use_excel=False):
     if use_excel:
         return NUTRI_OBJETIVOS_EXCEL.copy()
     if sex == "Masculino":
@@ -366,10 +366,20 @@ def calc_limits(age, weight_kg, height_cm, sex="Masculino", activity="Moderado",
     else:
         bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
     activity_factors = {"Sedentario": 1.2, "Ligero": 1.375, "Moderado": 1.55, "Activo": 1.725, "Muy activo": 1.9}
-    factor = activity_factors.get(activity, 1.55)
-    tdee = bmr * factor
-    protein_g = weight_kg * 1.6
-    fat_g = (tdee * 0.25) / 9
+    tdee = bmr * activity_factors.get(activity, 1.55)
+
+    if objetivo == "Perder grasa":
+        tdee      = tdee * 0.85
+        protein_g = weight_kg * 2.0
+        fat_g     = (tdee * 0.25) / 9
+    elif objetivo == "Ganar músculo":
+        tdee      = tdee * 1.10
+        protein_g = weight_kg * 1.8
+        fat_g     = (tdee * 0.28) / 9
+    else:  # Mantener peso
+        protein_g = weight_kg * 1.8
+        fat_g     = (tdee * 0.30) / 9
+
     carbs_g = (tdee - protein_g * 4 - fat_g * 9) / 4
     return {
         "calorias": round(tdee), "proteinas": round(protein_g),
@@ -549,6 +559,8 @@ with st.sidebar:
     activity = st.selectbox("🏃 Nivel de actividad",
                             ["Sedentario","Ligero","Moderado","Activo","Muy activo"],
                             index=["Sedentario","Ligero","Moderado","Activo","Muy activo"].index(gp.get("activity","Moderado")))
+    objetivo = st.selectbox("🎯 Objetivo", ["Perder grasa","Mantener peso","Ganar músculo"],
+                            index=["Perder grasa","Mantener peso","Ganar músculo"].index(gp.get("objetivo","Mantener peso")))
 
     if current_user == "StephanoEl":
         use_excel_limits = st.toggle("📊 Usar objetivos del Excel", value=bool(gp.get("use_excel_limits", True)))
@@ -558,6 +570,7 @@ with st.sidebar:
         perfil_data = {
             "age": age, "weight": weight, "height": height,
             "sex": sex, "activity": activity,
+            "objetivo": objetivo,  # ← agregá esto
             "use_excel_limits": use_excel_limits,
             "deficit": int(gp.get("deficit", 0)),
         }
@@ -566,8 +579,8 @@ with st.sidebar:
         gp = perfil_data
         st.success("✅ Perfil guardado")
 
-    limits = calc_limits(age, weight, height, sex, activity, use_excel=use_excel_limits)
-
+    limits = calc_limits(age, weight, height, sex, activity, objetivo=objetivo, use_excel=use_excel_limits)
+    
     st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
     src_label = "📊 Del Excel" if use_excel_limits else "🧮 Calculado"
     st.markdown(f"""<div style="font-size:.7rem;color:#6b7a99;text-transform:uppercase;letter-spacing:2px;margin-bottom:.8rem;">Tus límites diarios <span class='pill pill-info'>{src_label}</span></div>""", unsafe_allow_html=True)
