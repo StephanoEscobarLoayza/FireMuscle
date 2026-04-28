@@ -842,7 +842,7 @@ with tab_ejercicio:
                 series_str = str(ej.get("series","-")) if ej.get("series",0) > 0 else "-"
                 desc = ej.get("descanso", ej.get("descanso_txt", "-"))
 
-                col_ex, col_actions = st.columns([14, 1])
+                col_ex, col_actions = st.columns([10, 1])
                 with col_ex:
                     st.markdown(f"""<div class="db-ex-row" style="padding:.5rem .3rem;">
                         <span style="color:{mc};font-weight:600;min-width:90px;font-size:.78rem;">{ej.get('musculo','—')}</span>
@@ -852,15 +852,7 @@ with tab_ejercicio:
                         </span>
                     </div>""", unsafe_allow_html=True)
                 with col_actions:
-                    if st.button("↑", key=f"up_{selected}_{idx}", disabled=(idx==0)):
-                        ejercicios_usr[idx], ejercicios_usr[idx-1] = ejercicios_usr[idx-1], ejercicios_usr[idx]
-                        sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
-                        st.rerun()
-                    if st.button("↓", key=f"dn_{selected}_{idx}", disabled=(idx==len(ejercicios_usr)-1)):
-                        ejercicios_usr[idx], ejercicios_usr[idx+1] = ejercicios_usr[idx+1], ejercicios_usr[idx]
-                        sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
-                        st.rerun()
-                    if st.button("✕", key=f"rdel_{selected}_{idx}"):
+                    if st.button("❌", key=f"rdel_{selected}_{idx}"):
                         ejercicios_usr.pop(idx)
                         sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
                         st.rerun()
