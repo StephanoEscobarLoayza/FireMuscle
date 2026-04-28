@@ -542,12 +542,10 @@ st.markdown(f"""
 # ─── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""<div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#00e5a0;margin-bottom:1rem;">⚙️ PERFIL PERSONAL</div>""", unsafe_allow_html=True)
-
-    age      = st.number_input("🎂 Edad",        min_value=10,   max_value=100,  value=int(gp.get("age", 22)),        step=1)
-    weight   = st.number_input("⚖️ Peso (kg)",   min_value=30.0, max_value=250.0, value=float(gp.get("weight", 63.0)), step=0.5)
-    height   = st.number_input("📏 Altura (cm)", min_value=100.0, max_value=220.0, value=float(gp.get("height", 168.0)), step=0.5)
-    sex      = st.selectbox("⚥ Sexo", ["Masculino","Femenino"],
-                            index=0 if gp.get("sex","Masculino")=="Masculino" else 1)
+    age    = st.number_input("🎂 Edad",        min_value=10,  max_value=100,  value=int(gp.get("age", 25)),        step=1)
+    weight = st.number_input("⚖️ Peso (kg)",   min_value=30.0, max_value=250.0, value=float(gp.get("weight", 70.0)), step=0.5)
+    height = st.number_input("📏 Altura (cm)", min_value=100.0, max_value=220.0, value=float(gp.get("height", 170.0)), step=0.5)
+    sex    = st.selectbox("⚥ Sexo", ["Masculino","Femenino"], index=0 if gp.get("sex","Masculino")=="Masculino" else 1)
     activity = st.selectbox("🏃 Nivel de actividad",
                             ["Sedentario","Ligero","Moderado","Activo","Muy activo"],
                             index=["Sedentario","Ligero","Moderado","Activo","Muy activo"].index(gp.get("activity","Moderado")))
