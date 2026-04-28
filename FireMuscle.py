@@ -223,8 +223,6 @@ button[data-testid="baseButton-secondary"] p {
     line-height: 1 !important;
 }
 
-/* ===== MÓVIL: Sidebar visible ===== */
-/* ===== MÓVIL: Sidebar visible ===== */
 @media (max-width: 768px) {
 
     section[data-testid="stSidebar"] {
@@ -249,27 +247,12 @@ button[data-testid="baseButton-secondary"] p {
         height: auto !important;
     }
 
-    /* Botón reabrir sidebar visible y naranja */
-    [data-testid="collapsedControl"] {
-        display: flex !important;
-        background: #ff6b35 !important;
-        border-radius: 0 8px 8px 0 !important;
-        visibility: visible !important;
-    }
-
-    [data-testid="collapsedControl"] svg {
-        fill: white !important;
-        color: white !important;
-    }
-
-    /* Contenido principal debajo de la sidebar */
     section.main > div.block-container {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         max-width: 100vw !important;
     }
 
-    /* Header responsive */
     .app-header {
         padding: 1rem !important;
         flex-wrap: wrap !important;
@@ -285,15 +268,34 @@ button[data-testid="baseButton-secondary"] p {
         padding: .3rem .6rem !important;
     }
 
-    /* Métricas en 2 columnas en móvil */
     .metric-box {
         padding: .7rem .8rem !important;
     }
+
     .metric-val {
         font-size: 1.5rem !important;
     }
 }
+
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    background: #ff6b35 !important;
+    border-radius: 0 8px 8px 0 !important;
+    width: 30px !important;
+    height: 60px !important;
+    top: 50% !important;
+    position: fixed !important;
+    left: 0 !important;
+    z-index: 9999 !important;
+}
+
+[data-testid="collapsedControl"] svg {
+    fill: white !important;
+    color: white !important;
+}
 </style>
+
 """, unsafe_allow_html=True)
 
 # ─── SUPABASE HELPERS ──────────────────────────────────────────────────────────
