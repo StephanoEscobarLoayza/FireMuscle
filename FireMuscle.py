@@ -8,7 +8,7 @@ from supabase import create_client, Client
 
 # ─── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="🔥 FireMuscle",
+    page_title="🔥 FireMuscle · StephanoEl",
     page_icon="🔥",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -296,6 +296,43 @@ def sb_save_database(username, semana_num: int, dia_label: str, ejercicios, alim
 
 def sb_delete_database_row(row_id):
     supabase.table("fm_database").delete().eq("id", row_id).execute()
+    
+def sb_get_rutina(username):
+    res = supabase.table("fm_rutinas").select("*").eq("username", username).order("dia_key").execute()
+    return res.data or []
+
+def sb_save_rutina_dia(username, dia_key: str, titulo: str, ejercicios: list):
+    existing = supabase.table("fm_rutinas").select("id").eq("username", username).eq("dia_key", dia_key).execute()
+    payload = {
+        "username":   username,
+        "dia_key":    dia_key,
+        "titulo":     titulo,
+        "ejercicios": ejercicios,
+    }
+    if existing.data:
+        supabase.table("fm_rutinas").update(payload).eq("id", existing.data[0]["id"]).execute()
+    else:
+        supabase.table("fm_rutinas").insert(payload).execute()
+
+def sb_init_rutina_usuario(username):
+    existing = sb_get_rutina(username)
+    if not existing:
+        for dia_key, dia_data in RUTINA_BASE.items():
+            sb_save_rutina_dia(username, dia_key, dia_data["titulo"], dia_data["ejercicios"])
+
+def get_rutina_usuario(username):
+    rows = sb_get_rutina(username)
+    if not rows:
+        sb_init_rutina_usuario(username)
+        rows = sb_get_rutina(username)
+    rutina = {}
+    for row in rows:
+        rutina[row["dia_key"]] = {
+            "titulo":     row["titulo"],
+            "ejercicios": row["ejercicios"] or [],
+            "id":         row["id"],
+        }
+    return rutina    
 
 def sb_get_next_semana_num(username):
     res = supabase.table("fm_database").select("semana_num").eq("username", username).execute()
@@ -577,8 +614,8 @@ with st.sidebar:
         st.rerun()
 
 # ─── NAVIGATION ────────────────────────────────────────────────────────────────
-tab_nutricion, tab_ejercicio, tab_resumen, tab_database, tab_chat = st.tabs([
-    "🥗 Nutrición", "🏋️ Rutina", "📊 Resumen", "🗄️ Database", "🤖 AI Coach"
+tab_nutricion, tab_ejercicio, tab_resumen, tab_rutina, tab_database, tab_chat = st.tabs([
+    "🥗 Nutrición", "🏋️ Rutina", "📊 Resumen", "🏗️ Mi Rutina", "🗄️ Database", "🤖 AI Coach"
 ])
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -964,6 +1001,127 @@ with tab_resumen:
         icon    = "📍" if is_tod else "✅" if exs else ("😴" if i==6 else "○")
         with week_cols[i]:
             st.markdown(f"""<div style="text-align:center;background:#111827;border:1px solid {'#ff6b35' if is_tod else '#1e2d45'};border-radius:10px;padding:.8rem .3rem;"><div style="font-size:1.2rem;">{icon}</div><div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:{color};font-size:.9rem;">{dia_names[i]}</div><div style="font-size:.65rem;color:#6b7a99;margin-top:.2rem;">{len(exs)} ej.</div></div>""", unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAB · MI RUTINA
+# ═══════════════════════════════════════════════════════════════════════════════
+with tab_rutina:
+    st.markdown("""<div class="card card-orange"><div class="card-title">🏗️ MI RUTINA PERSONALIZADA</div>
+    <div style="font-size:.8rem;color:#6b7a99;">Edita, agrega, elimina y reordena tus ejercicios por día</div>
+    </div>""", unsafe_allow_html=True)
+
+    rutina_usuario = get_rutina_usuario(current_user)
+
+    dias_rutina = ["Día 1","Día 2","Día 3","Día 4","Día 5","Día 6"]
+
+    if "rutina_dia_sel" not in st.session_state:
+        st.session_state.rutina_dia_sel = "Día 1"
+
+    day_cols_r = st.columns(6)
+    for i, dk in enumerate(dias_rutina):
+        with day_cols_r[i]:
+            titulo_dk = rutina_usuario.get(dk, {}).get("titulo", "—")
+            if st.button(f"{dk}", key=f"rutbtn_{i}", use_container_width=True):
+                st.session_state.rutina_dia_sel = dk
+
+    dia_sel_r  = st.session_state.rutina_dia_sel
+    dia_data_r = rutina_usuario.get(dia_sel_r, {"titulo": "", "ejercicios": []})
+    ejercicios_r = list(dia_data_r.get("ejercicios", []))
+
+    st.markdown(f"""<div style="display:flex;align-items:center;justify-content:space-between;margin:1rem 0 .5rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:#ff6b35;">
+            {dia_sel_r}: {dia_data_r.get('titulo','').upper()}
+        </div>
+        <div style="font-size:.8rem;color:#6b7a99;">{len(ejercicios_r)} ejercicios</div>
+    </div>""", unsafe_allow_html=True)
+
+    # ── LISTA DE EJERCICIOS CON EDITAR / ELIMINAR / SUBIR / BAJAR ──────────────
+    if ejercicios_r:
+        for idx, ex in enumerate(ejercicios_r):
+            col_ex, col_up, col_down, col_del = st.columns([8, 1, 1, 1])
+            mc = {"Abdomen":"#ffd166","Espalda":"#00e5a0","Pecho":"#ff6b35",
+                  "Pierna":"#4facfe","Bíceps":"#a78bfa","Triceps":"#ec4899"}.get(ex.get("musculo",""), "#6b7a99")
+            with col_ex:
+                st.markdown(f"""<div style="background:#1a2332;border:1px solid #1e2d45;border-radius:10px;
+                    padding:.6rem 1rem;display:flex;align-items:center;gap:.8rem;">
+                    <span style="color:{mc};font-size:.72rem;font-weight:700;min-width:70px;">{ex.get('musculo','—')}</span>
+                    <span style="flex:1;font-size:.88rem;">{ex.get('nombre','—')}</span>
+                    <span style="font-size:.72rem;color:#6b7a99;">{ex.get('series','-')}s · {ex.get('reps','-')} · {ex.get('descanso',ex.get('descanso_txt','-'))}</span>
+                </div>""", unsafe_allow_html=True)
+            with col_up:
+                if idx > 0:
+                    if st.button("↑", key=f"up_{dia_sel_r}_{idx}"):
+                        ejercicios_r[idx], ejercicios_r[idx-1] = ejercicios_r[idx-1], ejercicios_r[idx]
+                        sb_save_rutina_dia(current_user, dia_sel_r, dia_data_r.get("titulo",""), ejercicios_r)
+                        st.rerun()
+            with col_down:
+                if idx < len(ejercicios_r) - 1:
+                    if st.button("↓", key=f"down_{dia_sel_r}_{idx}"):
+                        ejercicios_r[idx], ejercicios_r[idx+1] = ejercicios_r[idx+1], ejercicios_r[idx]
+                        sb_save_rutina_dia(current_user, dia_sel_r, dia_data_r.get("titulo",""), ejercicios_r)
+                        st.rerun()
+            with col_del:
+                if st.button("🗑️", key=f"rdel_{dia_sel_r}_{idx}"):
+                    ejercicios_r.pop(idx)
+                    sb_save_rutina_dia(current_user, dia_sel_r, dia_data_r.get("titulo",""), ejercicios_r)
+                    st.rerun()
+    else:
+        st.markdown("""<div style="text-align:center;padding:2rem;color:#6b7a99;">Sin ejercicios en este día</div>""", unsafe_allow_html=True)
+
+    st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
+
+    # ── AGREGAR EJERCICIO ───────────────────────────────────────────────────────
+    with st.expander("➕ Agregar ejercicio a este día"):
+        ra1, ra2 = st.columns(2)
+        with ra1:
+            r_nombre  = st.text_input("Nombre del ejercicio", placeholder="Ej: Sentadilla búlgara", key="r_nombre")
+            r_musculo = st.selectbox("Grupo muscular", ["Abdomen","Espalda","Pecho","Pierna","Bíceps","Triceps",
+                                                         "Hombros","Glúteos","Core","Cardio","Espalda/Brazos"], key="r_musculo")
+        with ra2:
+            r_series   = st.number_input("Series", min_value=0, max_value=20, value=3, key="r_series")
+            r_reps     = st.text_input("Reps", placeholder="12, 12, 10", key="r_reps")
+            r_descanso = st.text_input("Descanso", placeholder="30 seg", key="r_descanso")
+
+        if st.button("✅ Agregar a la rutina", use_container_width=True, key="r_agregar"):
+            if r_nombre.strip():
+                nuevo = {
+                    "musculo":  r_musculo,
+                    "nombre":   r_nombre,
+                    "series":   r_series,
+                    "reps":     r_reps,
+                    "descanso": r_descanso,
+                }
+                ejercicios_r.append(nuevo)
+                sb_save_rutina_dia(current_user, dia_sel_r, dia_data_r.get("titulo",""), ejercicios_r)
+                st.success(f"✅ '{r_nombre}' agregado al {dia_sel_r}")
+                st.rerun()
+            else:
+                st.error("Ingresa el nombre del ejercicio")
+
+    # ── EDITAR TÍTULO DEL DÍA ───────────────────────────────────────────────────
+    with st.expander("✏️ Editar título del día"):
+        nuevo_titulo = st.text_input("Título", value=dia_data_r.get("titulo",""), key="r_titulo")
+        if st.button("💾 Guardar título", use_container_width=True, key="r_save_titulo"):
+            sb_save_rutina_dia(current_user, dia_sel_r, nuevo_titulo, ejercicios_r)
+            st.success("✅ Título actualizado")
+            st.rerun()
+
+    # ── RESTAURAR DEFAULT ───────────────────────────────────────────────────────
+    st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
+    st.markdown("""<div class="alert-warn">⚠️ Restaurar borrará tus cambios y volverá a la rutina original.</div>""", unsafe_allow_html=True)
+    col_rest1, col_rest2 = st.columns(2)
+    with col_rest1:
+        if st.button(f"🔄 Restaurar solo {dia_sel_r}", use_container_width=True, key="r_restore_dia"):
+            default_dia = RUTINA_BASE.get(dia_sel_r, {})
+            sb_save_rutina_dia(current_user, dia_sel_r, default_dia.get("titulo",""), default_dia.get("ejercicios",[]))
+            st.success(f"✅ {dia_sel_r} restaurado")
+            st.rerun()
+    with col_rest2:
+        if st.button("🔄 Restaurar TODA la rutina", use_container_width=True, key="r_restore_all"):
+            for dk, dd in RUTINA_BASE.items():
+                sb_save_rutina_dia(current_user, dk, dd["titulo"], dd["ejercicios"])
+            st.success("✅ Rutina completa restaurada")
+            st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 · DATABASE
