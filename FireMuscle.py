@@ -277,22 +277,20 @@ button[data-testid="baseButton-secondary"] p {
     }
 }
 
-[data-testid="collapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    background: #ff6b35 !important;
-    border-radius: 0 8px 8px 0 !important;
-    width: 30px !important;
-    height: 60px !important;
-    top: 50% !important;
-    position: fixed !important;
-    left: 0 !important;
-    z-index: 9999 !important;
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
 }
 
-[data-testid="collapsedControl"] svg {
-    fill: white !important;
-    color: white !important;
+[data-testid="stSidebar"][aria-expanded="false"] {
+    transform: none !important;
+    display: block !important;
+    visibility: visible !important;
+    width: 21rem !important;
+    min-width: 21rem !important;
+}
+
+[data-testid="collapsedControl"] {
+    display: none !important;
 }
 </style>
 
