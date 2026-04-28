@@ -842,7 +842,7 @@ with tab_ejercicio:
                 series_str = str(ej.get("series","-")) if ej.get("series",0) > 0 else "-"
                 desc = ej.get("descanso", ej.get("descanso_txt", "-"))
 
-                col_ex, col_actions = st.columns([10, 1])
+                col_ex, col_actions = st.columns([14, 1])
                 with col_ex:
                     st.markdown(f"""<div class="db-ex-row" style="padding:.5rem .3rem;">
                         <span style="color:{mc};font-weight:600;min-width:90px;font-size:.78rem;">{ej.get('musculo','—')}</span>
