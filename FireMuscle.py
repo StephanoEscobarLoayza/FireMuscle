@@ -1012,116 +1012,17 @@ with tab_ejercicio:
         st.markdown(f"""<div style="text-align:center;padding:2rem;color:#6b7a99;"><div style="font-size:3rem;margin-bottom:1rem;">🏋️</div><div>Sin ejercicios registrados para {selected}</div></div>""", unsafe_allow_html=True)
 
     st.markdown("""<div style="background:rgba(79,172,254,.08);border:1px solid rgba(79,172,254,.2);border-radius:12px;padding:1rem 1.2rem;margin-top:1rem;text-align:center;color:#4facfe;font-size:.85rem;">☀️ <strong>Domingo</strong> — Día de descanso y recuperación. 💤</div>""", unsafe_allow_html=True)
-    
-    # ── LISTA DE EJERCICIOS ─────────────────────────────────────────────────────
-    if ejercicios_r:
-        for idx, ex in enumerate(ejercicios_r):
-            mc = {"Abdomen":"#ffd166","Espalda":"#00e5a0","Pecho":"#ff6b35",
-                  "Pierna":"#4facfe","Bíceps":"#a78bfa","Triceps":"#ec4899",
-                  "Hombros":"#4facfe","Glúteos":"#ec4899","Core":"#ffd166",
-                  "Cardio":"#ff4757","Espalda/Brazos":"#00e5a0"}.get(ex.get("musculo",""), "#6b7a99")
-
-            arrow_up   = f'<span style="font-size:.65rem;color:#6b7a99;opacity:.5;">▲</span>' if idx == 0 else ""
-            arrow_down = f'<span style="font-size:.65rem;color:#6b7a99;opacity:.5;">▼</span>' if idx == len(ejercicios_r)-1 else ""
-
-            col_ex, col_actions = st.columns([10, 1])
-            with col_ex:
-                st.markdown(f"""
-                <div style="background:#1a2332;border:1px solid #1e2d45;border-radius:10px;
-                    padding:.55rem 1rem;display:flex;align-items:center;gap:.8rem;margin:.2rem 0;">
-                    <span style="color:{mc};font-size:.68rem;font-weight:700;min-width:65px;
-                        flex-shrink:0;">{ex.get('musculo','—')}</span>
-                    <span style="flex:1;font-size:.86rem;">{ex.get('nombre','—')}</span>
-                    <span style="font-size:.68rem;color:#6b7a99;white-space:nowrap;">
-                        {ex.get('series','-')}s · {ex.get('reps','-')} · {ex.get('descanso', ex.get('descanso_txt','-'))}
-                    </span>
-                </div>""", unsafe_allow_html=True)
-
-            with col_actions:
-                subcols = st.columns(3)
-                with subcols[0]:
-                    up_disabled = (idx == 0)
-                    if st.button("▲", key=f"up_{dia_sel_r}_{idx}",
-                                 disabled=up_disabled,
-                                 help="Subir"):
-                        ejercicios_r[idx], ejercicios_r[idx-1] = ejercicios_r[idx-1], ejercicios_r[idx]
-                        sb_save_rutina_dia(current_user, dia_sel_r, titulo_r, ejercicios_r)
-                        st.rerun()
-                with subcols[1]:
-                    down_disabled = (idx == len(ejercicios_r) - 1)
-                    if st.button("▼", key=f"down_{dia_sel_r}_{idx}",
-                                 disabled=down_disabled,
-                                 help="Bajar"):
-                        ejercicios_r[idx], ejercicios_r[idx+1] = ejercicios_r[idx+1], ejercicios_r[idx]
-                        sb_save_rutina_dia(current_user, dia_sel_r, titulo_r, ejercicios_r)
-                        st.rerun()
-                with subcols[2]:
-                    if st.button("✕", key=f"rdel_{dia_sel_r}_{idx}", help="Eliminar"):
-                        ejercicios_r.pop(idx)
-                        sb_save_rutina_dia(current_user, dia_sel_r, titulo_r, ejercicios_r)
-                        st.rerun()
-    else:
-        st.markdown("""
-        <div style="text-align:center;padding:3rem 1rem;color:#6b7a99;">
-            <div style="font-size:2.5rem;margin-bottom:.8rem;">🏗️</div>
-            <div style="font-size:1rem;font-weight:600;color:#a78bfa;margin-bottom:.4rem;">
-                Este día está vacío
-            </div>
-            <div style="font-size:.82rem;">
-                Agrega ejercicios usando el formulario de abajo
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-    st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
-
-    # ── AGREGAR EJERCICIO ───────────────────────────────────────────────────────
-    with st.expander("➕ Agregar ejercicio"):
-        ra1, ra2 = st.columns(2)
-        with ra1:
-            r_nombre  = st.text_input("Nombre del ejercicio", placeholder="Ej: Sentadilla búlgara", key="r_nombre")
-            r_musculo = st.selectbox("Grupo muscular", [
-                "Abdomen","Espalda","Pecho","Pierna","Bíceps","Triceps",
-                "Hombros","Glúteos","Core","Cardio","Espalda/Brazos"
-            ], key="r_musculo")
-        with ra2:
-            r_series   = st.number_input("Series", min_value=0, max_value=20, value=3, key="r_series")
-            r_reps     = st.text_input("Reps", placeholder="12, 12, 10", key="r_reps")
-            r_descanso = st.text_input("Descanso", placeholder="30 seg", key="r_descanso")
-
-        if st.button("✅ Agregar a la rutina", use_container_width=True, key="r_agregar"):
-            if r_nombre.strip():
-                ejercicios_r.append({
-                    "musculo":  r_musculo,
-                    "nombre":   r_nombre,
-                    "series":   r_series,
-                    "reps":     r_reps,
-                    "descanso": r_descanso,
-                })
-                sb_save_rutina_dia(current_user, dia_sel_r, titulo_r, ejercicios_r)
-                st.success(f"✅ '{r_nombre}' agregado al {dia_sel_r}")
-                st.rerun()
-            else:
-                st.error("Ingresa el nombre del ejercicio")
-
-    # ── EDITAR TÍTULO DEL DÍA ───────────────────────────────────────────────────
-    with st.expander("✏️ Editar título del día"):
-        nuevo_titulo = st.text_input("Título", value=titulo_r, key="r_titulo",
-                                     placeholder="Ej: Espalda, Pierna, Bíceps...")
-        if st.button("💾 Guardar título", use_container_width=True, key="r_save_titulo"):
-            sb_save_rutina_dia(current_user, dia_sel_r, nuevo_titulo, ejercicios_r)
-            st.success("✅ Título actualizado")
-            st.rerun()
 
     # ── RESTAURAR ───────────────────────────────────────────────────────────────
     st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
     st.markdown("""<div class="alert-warn">⚠️ Solo para StephanoEl · Restaurar vuelve a la rutina original.</div>""", unsafe_allow_html=True)
     col_rest1, col_rest2 = st.columns(2)
     with col_rest1:
-        if st.button(f"🔄 Restaurar {dia_sel_r}", use_container_width=True, key="r_restore_dia"):
+        if st.button(f"🔄 Restaurar {selected}", use_container_width=True, key="r_restore_dia"):
             if current_user == "StephanoEl":
-                default_dia = RUTINA_BASE.get(dia_sel_r, {})
-                sb_save_rutina_dia(current_user, dia_sel_r, default_dia.get("titulo",""), default_dia.get("ejercicios",[]))
-                st.success(f"✅ {dia_sel_r} restaurado")
+                default_dia = RUTINA_BASE.get(selected, {})
+                sb_save_rutina_dia(current_user, selected, default_dia.get("titulo",""), default_dia.get("ejercicios",[]))
+                st.success(f"✅ {selected} restaurado")
                 st.rerun()
             else:
                 st.warning("Solo disponible para el administrador")
