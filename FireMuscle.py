@@ -1045,6 +1045,11 @@ with tab_ejercicio:
                     st.success("✅ Rutina completa restaurada")
                     st.rerun()
 
+with tab_resumen:
+    st.markdown("""<div class="card card-blue"><div class="card-title">📊 RESUMEN</div>
+    <div style="font-size:.8rem;color:#6b7a99;">Próximamente</div>
+    </div>""", unsafe_allow_html=True)
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 · DATABASE
 # ═══════════════════════════════════════════════════════════════════════════════
