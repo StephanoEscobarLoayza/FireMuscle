@@ -929,41 +929,6 @@ with tab_ejercicio:
 
     st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
 
-    with st.expander("➕ Agregar ejercicio al registro de hoy (extra)"):
-        ec1b, ec2b = st.columns([2,1])
-        with ec1b:
-            ex_name2  = st.text_input("🏋️ Nombre", placeholder="Ej: Press de banca...", key="ex2_nombre")
-            ex_group2 = st.selectbox("💪 Grupo muscular", [
-                "Pecho","Espalda","Hombros","Bíceps","Tríceps","Piernas",
-                "Glúteos","Core/Abdomen","Cardio","Cuerpo completo"
-            ], key="ex2_grupo")
-        with ec2b:
-            ex_type2 = st.selectbox("📌 Tipo", ["Fuerza","Cardio","Flexibilidad","HIIT","Funcional"], key="ex2_tipo")
-            ex_sets2 = st.number_input("📋 Series", min_value=0, max_value=20, value=0, key="ex2_series")
-            ex_reps2 = st.text_input("🔁 Reps", placeholder="10, 10, 8", key="ex2_reps")
-            ex_rest2 = st.text_input("😴 Descanso", placeholder="30 seg", key="ex2_desc")
-        ex_notes2 = st.text_area("📝 Notas", placeholder="RPE, sensaciones...", height=60, key="ex2_notas")
-
-        if st.button("✅ Agregar al registro", use_container_width=True, key="add_custom_ex"):
-            if ex_name2.strip():
-                sb_add_ejercicio(current_user, selected, {
-                    "nombre":       ex_name2,
-                    "musculo":      ex_group2,
-                    "tipo":         ex_type2,
-                    "duracion":     0,
-                    "series":       ex_sets2,
-                    "reps":         ex_reps2,
-                    "peso":         0.0,
-                    "descanso_txt": ex_rest2,
-                    "notas":        ex_notes2,
-                    "hora":         datetime.now().strftime("%H:%M"),
-                    "fuente":       "manual",
-                })
-                st.success(f"✅ '{ex_name2}' agregado al registro")
-                st.rerun()
-            else:
-                st.error("Ingresa el nombre del ejercicio")
-
     exercises = sb_get_ejercicios(current_user, selected)
 
     if exercises:
