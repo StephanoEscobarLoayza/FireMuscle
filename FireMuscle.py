@@ -852,22 +852,18 @@ with tab_ejercicio:
                         </span>
                     </div>""", unsafe_allow_html=True)
                 with col_actions:
-                    subcols = st.columns(3)
-                    with subcols[0]:
-                        if st.button("↑", key=f"up_{selected}_{idx}", disabled=(idx==0), help="Subir"):
-                            ejercicios_usr[idx], ejercicios_usr[idx-1] = ejercicios_usr[idx-1], ejercicios_usr[idx]
-                            sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
-                            st.rerun()
-                    with subcols[1]:
-                        if st.button("↓", key=f"dn_{selected}_{idx}", disabled=(idx==len(ejercicios_usr)-1), help="Bajar"):
-                            ejercicios_usr[idx], ejercicios_usr[idx+1] = ejercicios_usr[idx+1], ejercicios_usr[idx]
-                            sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
-                            st.rerun()
-                    with subcols[2]:
-                        if st.button("✕", key=f"rdel_{selected}_{idx}", help="Eliminar"):
-                            ejercicios_usr.pop(idx)
-                            sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
-                            st.rerun()
+                    if st.button("↑", key=f"up_{selected}_{idx}", disabled=(idx==0)):
+                        ejercicios_usr[idx], ejercicios_usr[idx-1] = ejercicios_usr[idx-1], ejercicios_usr[idx]
+                        sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
+                        st.rerun()
+                    if st.button("↓", key=f"dn_{selected}_{idx}", disabled=(idx==len(ejercicios_usr)-1)):
+                        ejercicios_usr[idx], ejercicios_usr[idx+1] = ejercicios_usr[idx+1], ejercicios_usr[idx]
+                        sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
+                        st.rerun()
+                    if st.button("✕", key=f"rdel_{selected}_{idx}"):
+                        ejercicios_usr.pop(idx)
+                        sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
+                        st.rerun()
         else:
             st.markdown("""<div style="text-align:center;padding:2rem;color:#6b7a99;">
                 <div style="font-size:2rem;margin-bottom:.5rem;">🏗️</div>
