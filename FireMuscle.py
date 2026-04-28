@@ -223,6 +223,69 @@ button[data-testid="baseButton-secondary"] p {
     line-height: 1 !important;
 }
 
+/* ===== MÓVIL: Sidebar visible ===== */
+/* ===== MÓVIL: Sidebar visible ===== */
+@media (max-width: 768px) {
+
+    section[data-testid="stSidebar"] {
+        position: relative !important;
+        width: 100vw !important;
+        min-width: 100vw !important;
+        max-width: 100vw !important;
+        height: auto !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        display: block !important;
+        visibility: visible !important;
+        z-index: 1 !important;
+        box-shadow: none !important;
+    }
+
+    section[data-testid="stSidebar"] > div {
+        width: 100vw !important;
+        min-width: 100vw !important;
+        padding: 1rem !important;
+        height: auto !important;
+    }
+
+    /* Ocultar botón nativo de colapsar */
+    button[data-testid="collapsedControl"],
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+
+    /* Contenido principal debajo de la sidebar */
+    section.main > div.block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        max-width: 100vw !important;
+    }
+
+    /* Header responsive */
+    .app-header {
+        padding: 1rem !important;
+        flex-wrap: wrap !important;
+        margin: -1rem -1rem 1rem -1rem !important;
+    }
+
+    .app-title {
+        font-size: 1.5rem !important;
+    }
+
+    .user-badge {
+        font-size: .65rem !important;
+        padding: .3rem .6rem !important;
+    }
+
+    /* Métricas en 2 columnas en móvil */
+    .metric-box {
+        padding: .7rem .8rem !important;
+    }
+    .metric-val {
+        font-size: 1.5rem !important;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
