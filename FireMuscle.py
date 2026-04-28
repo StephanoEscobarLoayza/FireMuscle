@@ -289,35 +289,6 @@ button[data-testid="baseButton-secondary"] p {
 </style>
 """, unsafe_allow_html=True)
 
-import streamlit.components.v1 as components
-
-components.html("""
-<script>
-function fixSidebar() {
-    const sidebar = window.parent.document.querySelector('section[data-testid="stSidebar"]');
-    const collapsed = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-    
-    if (sidebar) {
-        sidebar.style.setProperty('transform', 'none', 'important');
-        sidebar.style.setProperty('position', 'relative', 'important');
-        sidebar.style.setProperty('width', '100vw', 'important');
-        sidebar.style.setProperty('display', 'block', 'important');
-        sidebar.style.setProperty('visibility', 'visible', 'important');
-    }
-    if (collapsed) {
-        collapsed.style.setProperty('display', 'none', 'important');
-    }
-}
-
-setTimeout(fixSidebar, 200);
-setTimeout(fixSidebar, 800);
-setTimeout(fixSidebar, 2000);
-
-const observer = new MutationObserver(fixSidebar);
-observer.observe(window.parent.document.body, { childList: true, subtree: true });
-</script>
-""", height=0)
-
 # ─── SUPABASE HELPERS ──────────────────────────────────────────────────────────
 
 def sb_login(username, password):
