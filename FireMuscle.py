@@ -1046,9 +1046,71 @@ with tab_ejercicio:
                     st.rerun()
 
 with tab_resumen:
-    st.markdown("""<div class="card card-blue"><div class="card-title">📊 RESUMEN</div>
-    <div style="font-size:.8rem;color:#6b7a99;">Próximamente</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="card card-blue"><div class="card-title">📊 RESUMEN DEL DÍA</div><div style="font-size:.8rem;color:#6b7a99;">Vista general de nutrición + entrenamiento de hoy</div></div>""", unsafe_allow_html=True)
+
+    today_key_res   = get_today_key()
+    foods_res       = sb_get_alimentos(current_user, today_key_res)
+    dow_res         = date.today().weekday()
+    today_dia_res   = DIA_SEMANA_MAP.get(dow_res)
+    exercises_res   = sb_get_ejercicios(current_user, today_dia_res) if today_dia_res else []
+
+    r1, r2 = st.columns(2)
+    with r1:
+        st.markdown("""<div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:#00e5a0;margin-bottom:.8rem;">🥗 NUTRICIÓN HOY</div>""", unsafe_allow_html=True)
+        if foods_res:
+            totals  = sum_nutrients(foods_res)
+            pct_cal = min(totals["calorias"]/limits["calorias"]*100, 100) if limits["calorias"]>0 else 0
+            cal_col = "#00e5a0" if pct_cal<=80 else "#ffd166" if pct_cal<=100 else "#ff4757"
+            st.markdown(f"""<div class="metric-box" style="margin-bottom:.8rem;"><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:{cal_col};">{totals['calorias']:.0f}</div><div class="metric-label">kcal consumidas de {limits['calorias']}</div></div>""", unsafe_allow_html=True)
+            for key, label, unit in [
+                ("proteinas","💪 Proteínas","g"),("carbohidratos","🌾 Carbos","g"),
+                ("grasas","🧈 Grasas","g"),("azucar","🍬 Azúcar","g"),
+                ("fibra","🌿 Fibra","g"),("sodio","🧂 Sodio","mg"),
+            ]:
+                val = totals[key]; lim = limits[key]
+                pct = min(val/lim*100, 100) if lim>0 else 0
+                st_txt,cls,_ = get_status(val,lim,key)
+                bc = "prog-good" if cls=="good" else "prog-warn" if cls=="warn" else "prog-bad"
+                st.markdown(f"""<div class="prog-wrap"><div class="prog-label"><span>{label} <span class="pill pill-{cls}">{st_txt}</span></span><span>{val:.0f}/{lim}{unit}</span></div><div class="prog-bar"><div class="prog-fill {bc}" style="width:{pct:.0f}%"></div></div></div>""", unsafe_allow_html=True)
+            result = overall_diet_status(foods_res, limits)
+            if result:
+                cls,msg = result
+                st.markdown(f'<div class="alert-{cls}" style="margin-top:.8rem;">{msg}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div style="color:#6b7a99;padding:2rem;text-align:center;">Sin datos de nutrición hoy</div>', unsafe_allow_html=True)
+
+    with r2:
+        today_dia_label = RUTINA_BASE.get(today_dia_res,{}).get("titulo","Domingo") if today_dia_res else "Domingo"
+        st.markdown(f"""<div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:#ff6b35;margin-bottom:.8rem;">🏋️ ENTRENAMIENTO HOY {"("+today_dia_label+")" if today_dia_res else "(DOMINGO)"}</div>""", unsafe_allow_html=True)
+        if not today_dia_res:
+            st.markdown("""<div style="text-align:center;padding:2rem;color:#4facfe;"><div style="font-size:3rem;">😴</div><div>Hoy es Domingo · Día de descanso</div></div>""", unsafe_allow_html=True)
+        elif exercises_res:
+            total_sets = sum(int(e.get("series",0) or 0) for e in exercises_res)
+            grupos     = list(set(get_musculo_from_exercise(e) for e in exercises_res))
+            st.markdown(f"""<div class="metric-box" style="margin-bottom:.8rem;"><div class="metric-val" style="color:#ff6b35;">{len(exercises_res)}</div><div class="metric-label">ejercicios · {total_sets} series</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div style="font-size:.75rem;color:#6b7a99;margin-bottom:.5rem;">Grupos: {', '.join(grupos)}</div>""", unsafe_allow_html=True)
+            for ex in exercises_res:
+                parts = []
+                if ex.get("series"): parts.append(f"{ex['series']} series")
+                if ex.get("reps"):   parts.append(str(ex["reps"]))
+                st.markdown(f"""<div style="background:#1a2332;border:1px solid #1e2d45;border-radius:8px;padding:.6rem .8rem;margin:.3rem 0;font-size:.82rem;"><strong>{ex['nombre']}</strong><span style="color:#6b7a99;margin-left:.5rem;">{' | '.join(parts)}</span></div>""", unsafe_allow_html=True)
+        else:
+            rutina_hoy = RUTINA_BASE.get(today_dia_res)
+            if rutina_hoy:
+                st.markdown(f"""<div class="alert-warn">⚡ Sin ejercicios registrados. Tu rutina de hoy: <strong>{rutina_hoy['titulo']}</strong> ({len(rutina_hoy['ejercicios'])} ejercicios).</div>""", unsafe_allow_html=True)
+
+    st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
+    st.markdown("""<div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:#4facfe;margin-bottom:.8rem;">📅 RESUMEN SEMANAL</div>""", unsafe_allow_html=True)
+    week_cols = st.columns(7)
+    dia_names = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
+    for i in range(7):
+        dia_key_w = DIA_SEMANA_MAP.get(i)
+        exs_w     = sb_get_ejercicios(current_user, dia_key_w) if dia_key_w else []
+        is_tod    = (date.today().weekday()==i)
+        color     = "#ff6b35" if is_tod else "#4facfe" if exs_w else "#6b7a99"
+        icon      = "📍" if is_tod else "✅" if exs_w else ("😴" if i==6 else "○")
+        with week_cols[i]:
+            st.markdown(f"""<div style="text-align:center;background:#111827;border:1px solid {'#ff6b35' if is_tod else '#1e2d45'};border-radius:10px;padding:.8rem .3rem;"><div style="font-size:1.2rem;">{icon}</div><div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:{color};font-size:.9rem;">{dia_names[i]}</div><div style="font-size:.65rem;color:#6b7a99;margin-top:.2rem;">{len(exs_w)} ej.</div></div>""", unsafe_allow_html=True)
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 · DATABASE
 # ═══════════════════════════════════════════════════════════════════════════════
