@@ -8,7 +8,7 @@ from supabase import create_client, Client
 
 # ─── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="🔥 FireMuscle · StephanoEl",
+    page_title="FireMuscle",
     page_icon="🔥",
     layout="wide",
     initial_sidebar_state="expanded",
