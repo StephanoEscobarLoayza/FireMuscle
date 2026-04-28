@@ -210,6 +210,19 @@ div[data-testid="InputInstructions"],
 header[data-testid="stHeader"] {
     display: none !important;
 }
+
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+/* AGREGÁ ESTO JUSTO ANTES DEL CIERRE */
+button[data-testid="baseButton-secondary"] p {
+    font-size: 1rem !important;
+    line-height: 1 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -827,12 +840,12 @@ with tab_ejercicio:
                 with col_actions:
                     subcols = st.columns(3)
                     with subcols[0]:
-                        if st.button("▲", key=f"up_{selected}_{idx}", disabled=(idx==0), help="Subir"):
+                        if st.button("↑", key=f"up_{selected}_{idx}", disabled=(idx==0), help="Subir"):
                             ejercicios_usr[idx], ejercicios_usr[idx-1] = ejercicios_usr[idx-1], ejercicios_usr[idx]
                             sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
                             st.rerun()
                     with subcols[1]:
-                        if st.button("▼", key=f"dn_{selected}_{idx}", disabled=(idx==len(ejercicios_usr)-1), help="Bajar"):
+                        if st.button("↓", key=f"dn_{selected}_{idx}", disabled=(idx==len(ejercicios_usr)-1), help="Bajar"):
                             ejercicios_usr[idx], ejercicios_usr[idx+1] = ejercicios_usr[idx+1], ejercicios_usr[idx]
                             sb_save_rutina_dia(current_user, selected, titulo_usr, ejercicios_usr)
                             st.rerun()
@@ -1014,27 +1027,23 @@ with tab_ejercicio:
     st.markdown("""<div style="background:rgba(79,172,254,.08);border:1px solid rgba(79,172,254,.2);border-radius:12px;padding:1rem 1.2rem;margin-top:1rem;text-align:center;color:#4facfe;font-size:.85rem;">☀️ <strong>Domingo</strong> — Día de descanso y recuperación. 💤</div>""", unsafe_allow_html=True)
 
     # ── RESTAURAR ───────────────────────────────────────────────────────────────
-    st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
-    st.markdown("""<div class="alert-warn">⚠️ Solo para StephanoEl · Restaurar vuelve a la rutina original.</div>""", unsafe_allow_html=True)
-    col_rest1, col_rest2 = st.columns(2)
-    with col_rest1:
-        if st.button(f"🔄 Restaurar {selected}", use_container_width=True, key="r_restore_dia"):
-            if current_user == "StephanoEl":
-                default_dia = RUTINA_BASE.get(selected, {})
-                sb_save_rutina_dia(current_user, selected, default_dia.get("titulo",""), default_dia.get("ejercicios",[]))
-                st.success(f"✅ {selected} restaurado")
-                st.rerun()
-            else:
-                st.warning("Solo disponible para el administrador")
-    with col_rest2:
-        if st.button("🔄 Restaurar toda la rutina", use_container_width=True, key="r_restore_all"):
-            if current_user == "StephanoEl":
-                for dk, dd in RUTINA_BASE.items():
-                    sb_save_rutina_dia(current_user, dk, dd["titulo"], dd["ejercicios"])
-                st.success("✅ Rutina completa restaurada")
-                st.rerun()
-            else:
-                st.warning("Solo disponible para el administrador")
+    if current_user == "StephanoEl":
+        st.markdown("<hr class='section-sep'>", unsafe_allow_html=True)
+        with st.expander("⚙️ Admin · Restaurar rutina", expanded=False):
+            st.markdown("""<div class="alert-warn">⚠️ Restaurar vuelve a la rutina original. No se puede deshacer.</div>""", unsafe_allow_html=True)
+            col_rest1, col_rest2 = st.columns(2)
+            with col_rest1:
+                if st.button(f"🔄 Restaurar {selected}", use_container_width=True, key="r_restore_dia"):
+                    default_dia = RUTINA_BASE.get(selected, {})
+                    sb_save_rutina_dia(current_user, selected, default_dia.get("titulo",""), default_dia.get("ejercicios",[]))
+                    st.success(f"✅ {selected} restaurado")
+                    st.rerun()
+            with col_rest2:
+                if st.button("🔄 Restaurar toda la rutina", use_container_width=True, key="r_restore_all"):
+                    for dk, dd in RUTINA_BASE.items():
+                        sb_save_rutina_dia(current_user, dk, dd["titulo"], dd["ejercicios"])
+                    st.success("✅ Rutina completa restaurada")
+                    st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 · DATABASE
