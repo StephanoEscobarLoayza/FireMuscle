@@ -5,6 +5,13 @@ import os
 from datetime import datetime, date, timedelta
 import math
 from supabase import create_client, Client
+import pytz                                    # 👈 agrega esto
+
+# 👇 agrega esto también
+lima_tz = pytz.timezone("America/Lima")
+
+def get_today_key():
+    return datetime.now(lima_tz).date().isoformat()
 
 # ─── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -365,7 +372,7 @@ def sb_save_database(username, semana_num: int, dia_label: str, ejercicios, alim
         "username":    username,
         "semana_num":  semana_num,
         "dia_label":   dia_label,
-        "fecha":       date.today().isoformat(),
+        "fecha":       datetime.now(lima_tz).date().isoformat(),
         "ejercicios":  ejercicios,
         "alimentos":   alimentos,
         "notas":       notas,
@@ -495,16 +502,13 @@ def sum_nutrients(foods):
 def get_musculo_from_exercise(ex):
     return ex.get("musculo") or "—"
 
-def get_today_key():
-    return date.today().isoformat()
-
 # ─── SESSION STATE ─────────────────────────────────────────────────────────────
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
     st.session_state.username = ""
 if "selected_day" not in st.session_state:
-    dow = date.today().weekday()
+    dow = datetime.now(lima_tz).date().weekday()
     st.session_state.selected_day = DIA_SEMANA_MAP.get(dow, "Día 1")
 if "editing_food_idx" not in st.session_state:
     st.session_state.editing_food_idx = None
@@ -724,7 +728,8 @@ tab_nutricion, tab_ejercicio, tab_resumen, tab_database, tab_chat = st.tabs([
 with tab_nutricion:
     today_key = get_today_key()
 
-    st.markdown(f"""<div class="card"><div class="card-title">🥗 REGISTRO DE ALIMENTOS</div><div style="font-size:.8rem;color:#6b7a99;">📅 Hoy: {date.today().strftime('%A %d de %B, %Y')}</div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="card"><div class="card-title">🥗 REGISTRO DE ALIMENTOS</div><div style="font-size:.8rem;color:#6b7a99;">📅 Hoy: {datetime.now(lima_tz).date().strftime('%A %d de %B, %Y')
+}</div></div>""", unsafe_allow_html=True)
 
     with st.expander("➕ Agregar alimento", expanded=True):
         fk = st.session_state.food_form_counter
@@ -885,7 +890,7 @@ with tab_ejercicio:
     day_cols = st.columns(6)
     for i, dia_key in enumerate(dias_rutina):
         with day_cols[i]:
-            dow_today = date.today().weekday()
+            dow_today = datetime.now(lima_tz).date().weekday()
             is_today  = (DIA_SEMANA_MAP.get(dow_today) == dia_key)
             label     = f"{'📍 ' if is_today else ''}{dia_key}"
             if st.button(label, key=f"daybtn_{i}", use_container_width=True):
@@ -1087,7 +1092,7 @@ with tab_resumen:
 
     today_key_res   = get_today_key()
     foods_res       = sb_get_alimentos(current_user, today_key_res)
-    dow_res         = date.today().weekday()
+    dow_res         = datetime.now(lima_tz).date().weekday()
     today_dia_res   = DIA_SEMANA_MAP.get(dow_res)
     exercises_res   = sb_get_ejercicios(current_user, today_dia_res) if today_dia_res else []
 
@@ -1143,7 +1148,7 @@ with tab_resumen:
     for i in range(7):
         dia_key_w = DIA_SEMANA_MAP.get(i)
         exs_w     = sb_get_ejercicios(current_user, dia_key_w) if dia_key_w else []
-        is_tod    = (date.today().weekday()==i)
+        is_tod    = (datetime.now(lima_tz).date().weekday()==i)
         color     = "#ff6b35" if is_tod else "#4facfe" if exs_w else "#6b7a99"
         icon      = "📍" if is_tod else "✅" if exs_w else ("😴" if i==6 else "○")
         with week_cols[i]:
@@ -1382,7 +1387,7 @@ with tab_database:
                 st2.alignment = Alignment(horizontal="center",vertical="center")
                 st2.fill = PatternFill("solid",fgColor="FF8050")
                 wc.merge_cells("B8:H8"); inf = wc["B8"]
-                inf.value = f"Usuario: {current_user}   ·   {date.today().strftime('%d de %B del %Y')}   ·   Filtro: {filtro_label}"
+                inf.value = f"Usuario: {current_user}   ·   {datetime.now(lima_tz).date().strftime('%d de %B del %Y')}   ·   Filtro: {filtro_label}"
                 inf.font = Font(size=10,color=C_MUTED,name="Calibri")
                 inf.alignment = Alignment(horizontal="center",vertical="center")
                 inf.fill = PatternFill("solid",fgColor=C_WHITE)
@@ -1463,7 +1468,7 @@ with tab_database:
                     aw(wn)
 
                 buf = io.BytesIO(); wb.save(buf); buf.seek(0)
-                fname = f"firemuscle_{current_user}_{date.today().isoformat()}.xlsx"
+                fname = f"firemuscle_{current_user}_{datetime.now(lima_tz).date().isoformat()}.xlsx"
                 st.session_state["excel_buf"]   = buf
                 st.session_state["excel_fname"] = fname
                 st.success(f"✅ Excel listo — {len(filas_ej_exp)} ejercicios · {len(filas_al_exp)} alimentos")
@@ -1486,7 +1491,7 @@ with tab_chat:
     </div>""", unsafe_allow_html=True)
 
     today_foods_chat    = sb_get_alimentos(current_user, get_today_key())
-    dow_chat            = date.today().weekday()
+    dow_chat            = datetime.now(lima_tz).date().weekday()
     today_dia_key_chat  = DIA_SEMANA_MAP.get(dow_chat)
     exercises_today_chat = sb_get_ejercicios(current_user, today_dia_key_chat) if today_dia_key_chat else []
 
