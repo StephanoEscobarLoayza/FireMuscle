@@ -325,13 +325,9 @@ def sb_get_perfil(username):
     return res.data[0] if res.data else {}
 
 def sb_save_perfil(username, perfil: dict):
-    existing = supabase.table("fm_perfil").select("id").eq("username", username).execute()
     perfil["username"] = username
     perfil["updated_at"] = datetime.now().isoformat()
-    if existing.data:
-        supabase.table("fm_perfil").update(perfil).eq("username", username).execute()
-    else:
-        supabase.table("fm_perfil").insert(perfil).execute()
+    supabase.table("fm_perfil").upsert(perfil, on_conflict="username").execute()
 
 def sb_get_alimentos(username, fecha: str):
     res = supabase.table("fm_alimentos").select("*").eq("username", username).eq("fecha", fecha).order("created_at").execute()
